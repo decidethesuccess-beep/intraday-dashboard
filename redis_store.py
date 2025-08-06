@@ -190,7 +190,7 @@ class RedisStore:
                 else:
                     logger.warning(f"LTP not found in REST API response for {symbol}: {response}")
             else:
-                error_message = response.get('message', 'No data or unknown error from REST API.') if response else "No response from REST API."
+                error_message = response.get('message', 'No data or unknown error.') if response else "No response from REST API."
                 logger.warning(f"Failed to fetch LTP for {symbol} via REST API: {error_message}")
             return None
         except Exception as e:
@@ -385,7 +385,7 @@ class RedisStore:
                 logger.error(f"Error loading system state from Redis: {e}", exc_info=True)
         else:
             logger.warning("Redis client not connected. Cannot load system state.")
-        return None
+        return {} # Changed from None to empty dictionary
 
     def get_available_capital(self) -> float:
         """
