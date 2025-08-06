@@ -6,4 +6,4 @@ redis
 pyotp
 pycryptodome
 websocket-client
-git+https://github.com/angel-one/SmartAPI.git
+smartapi-python
