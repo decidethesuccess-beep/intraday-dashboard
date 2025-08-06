@@ -8,3 +8,4 @@ pycryptodome
 smartapi-python
 websocket-client
 logzero
+
