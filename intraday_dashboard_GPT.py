@@ -15,7 +15,6 @@ import json
 # Import core components
 from redis_store import RedisStore
 from angelone_api_patch import AngelOneAPI
-# Removed: from dhan_api_patch import DhanAPI # This import should be removed as Dhan is no longer used
 from llm_client import LLMClient
 from sentiment_analyzer import SentimentAnalyzer
 from strategy import StrategyManager
@@ -50,8 +49,6 @@ if not st.session_state.initialized:
 
     st.session_state.redis_store = RedisStore(st.session_state.angel_api)
     st.session_state.redis_store.connect()
-
-    # Removed: st.session_state.dhan_api = DhanAPI() # Initialize DhanAPI (no longer needed)
 
     st.session_state.llm_client = LLMClient() # Initialize LLMClient
     
@@ -157,7 +154,7 @@ with tab1:
                     unrealized_pnl = (current_ltp - trade['entry_price']) * trade['qty']
                 elif trade['direction'] == 'SELL':
                     unrealized_pnl = (trade['entry_price'] - current_ltp) * trade['qty']
-                total_unrealized_pnl += unrealized_pnl # This line was missing for total_unrealized_pnl calculation
+                # Removed: total_unrealized_pnl += unrealized_pnl # This line was missing for total_unrealized_pnl calculation
             display_trade['unrealized_pnl'] = round(unrealized_pnl, 2)
             active_trades_for_display.append(display_trade)
 
@@ -271,28 +268,60 @@ with tab4:
     st.header("Backtesting")
     st.write("Run your strategy against historical data.")
 
+    # NEW: Backtesting input fields
+    backtest_symbol_options = list(st.session_state.paper_trade_system.ANGEL_ONE_SYMBOL_MAP.keys())
+    backtest_symbol = st.selectbox("Select Symbol for Backtest", options=backtest_symbol_options)
+
+    # Map selected symbol to Angel One token and exchange type
+    selected_symbol_info = st.session_state.paper_trade_system.ANGEL_ONE_SYMBOL_MAP.get(backtest_symbol, {})
+    backtest_symbol_token = selected_symbol_info.get("token")
+    backtest_exchange_type = selected_symbol_info.get("exchangeType")
+
+    backtest_interval = st.selectbox("Candle Interval", options=["ONE_MINUTE", "THREE_MINUTE", "FIVE_MINUTE", "TEN_MINUTE", "FIFTEEN_MINUTE", "THIRTY_MINUTE", "ONE_HOUR", "ONE_DAY"])
+    
+    backtest_leverage_enabled = st.checkbox("Enable Leverage for Backtest", value=False)
+    backtest_ai_auto_leverage = st.checkbox("Enable AI Auto-Leverage for Backtest", value=True)
+
     start_date = st.date_input("Start Date", value=datetime(2024, 1, 1))
     end_date = st.date_input("End Date", value=datetime(2024, 1, 31))
 
     if st.button("Run Backtest"):
-        with st.spinner("Running backtest... This may take a while."):
-            st.session_state.backtester.run_backtest(
-                datetime.combine(start_date, dt_time.min),
-                datetime.combine(end_date, dt_time.max)
-            )
-        st.success("Backtest completed! See results below.")
-        
-        # Display backtest results
-        st.subheader("Backtest Summary")
-        backtest_metrics = st.session_state.paper_trade_system.get_dashboard_metrics() # Re-use metrics after backtest
-        st.json(backtest_metrics) # Display as JSON for now
-
-        st.subheader("Backtest Closed Trades")
-        backtest_closed_trades_df = pd.DataFrame(st.session_state.paper_trade_system.closed_trades)
-        if not backtest_closed_trades_df.empty:
-            st.dataframe(backtest_closed_trades_df)
+        if not backtest_symbol_token or not backtest_exchange_type:
+            st.error(f"Could not find Angel One token/exchange for {backtest_symbol}. Please check ANGEL_ONE_SYMBOL_MAP.")
         else:
-            st.info("No trades were closed during the backtest.")
+            with st.spinner(f"Running backtest for {backtest_symbol}... This may take a while."):
+                backtest_report = st.session_state.backtester.run_backtest(
+                    symbol=backtest_symbol,
+                    symbol_token=backtest_symbol_token,
+                    exchange_type=backtest_exchange_type,
+                    from_date=datetime.combine(start_date, dt_time.min),
+                    to_date=datetime.combine(end_date, dt_time.max),
+                    interval=backtest_interval,
+                    leverage_enabled=backtest_leverage_enabled,
+                    ai_auto_leverage=backtest_ai_auto_leverage
+                )
+            
+            if backtest_report:
+                st.success("Backtest completed! See results below.")
+                
+                # Display backtest results
+                st.subheader("Backtest Summary")
+                st.json(backtest_report) # Display as JSON for now
+
+                st.subheader("Backtest Closed Trades")
+                backtest_closed_trades_df = pd.DataFrame(backtest_report.get('trade_logs', []))
+                if not backtest_closed_trades_df.empty:
+                    st.dataframe(backtest_closed_trades_df)
+                else:
+                    st.info("No trades were closed during the backtest.")
+
+                # Optional: Plot equity curve if capital_history is available in report
+                # This would require backtester to return capital_history
+                # For now, we'll just show the final capital.
+
+            else:
+                st.error("Backtest failed or no data found for the selected period/symbol.")
+
 
 with tab5:
     st.header("AI Feedback (Work In Progress)")
