@@ -445,6 +445,36 @@ class RedisStore:
         else:
             logger.warning("Redis client not connected. Cannot set setting.")
 
+    def get_all_settings(self) -> Dict[str, Any]:
+        """
+        Retrieves all strategy settings stored in Redis under the 'setting:*' pattern.
+
+        Returns:
+            Dict[str, Any]: A dictionary of all settings.
+        """
+        all_settings = {}
+        if self.redis_client:
+            try:
+                # Use 'keys' to find all keys matching the pattern
+                setting_keys = self.redis_client.keys("setting:*")
+                for key_bytes in setting_keys:
+                    key = key_bytes.decode('utf-8')
+                    # Extract the actual setting name (remove "setting:")
+                    setting_name = key.replace("setting:", "")
+                    value = self.redis_client.get(key)
+                    if value:
+                        try:
+                            # Attempt to deserialize if it was stored as JSON
+                            all_settings[setting_name] = json.loads(value)
+                        except json.JSONDecodeError:
+                            all_settings[setting_name] = value.decode('utf-8')
+            except Exception as e:
+                logger.error(f"Error retrieving all settings from Redis: {e}", exc_info=True)
+        else:
+            logger.warning("Redis client not connected. Cannot get all settings.")
+        return all_settings
+
+
 # Example Usage (for testing this module directly)
 if __name__ == "__main__":
     print("--- Starting RedisStore Module Test ---")
@@ -538,6 +568,11 @@ if __name__ == "__main__":
         another_setting_val = redis_store.get_setting("another_setting")
         print(f"Setting 'another_setting': {another_setting_val}")
 
+        # Test get_all_settings (NEW)
+        print("\n--- Testing get_all_settings (NEW) ---")
+        all_settings = redis_store.get_all_settings()
+        print(f"All retrieved settings: {all_settings}")
+        # Expected output should include 'my_test_setting' and 'another_setting'
 
         redis_store.disconnect()
     else:
