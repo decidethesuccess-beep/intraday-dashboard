@@ -155,7 +155,8 @@ class PaperTradeSystem:
         capital_efficiency = (total_pnl / self.initial_capital * 100) if self.initial_capital > 0 else 0.0
 
         # Leverage Tier (based on current available capital)
-        leverage_tier = self.strategy_manager.get_leverage_tier(self.available_capital, self.redis_store.load_settings_from_redis())
+        # UPDATED: Use get_all_settings() to pass all settings to get_leverage_tier
+        leverage_tier = self.strategy_manager.get_leverage_tier(self.available_capital, self.redis_store.get_all_settings())
 
 
         return {
@@ -404,7 +405,8 @@ class PaperTradeSystem:
                 continue
 
             # Load latest settings from Redis (dashboard can update these)
-            settings = self.redis_store.load_settings_from_redis()
+            # UPDATED: Use get_all_settings() to load all settings
+            settings = self.redis_store.get_all_settings()
             if settings:
                 # Update strategy manager's parameters from Redis settings
                 self.strategy_manager.MIN_AI_SCORE_BUY = settings.get("min_ai_score_buy", self.strategy_manager.MIN_AI_SCORE_BUY)
@@ -415,9 +417,26 @@ class PaperTradeSystem:
                 self.strategy_manager.TSL_ACTIVATION_BUFFER_PERCENT = settings.get("tsl_activation_buffer_percent", self.strategy_manager.TSL_ACTIVATION_BUFFER_PERCENT)
                 self.strategy_manager.MAX_ACTIVE_POSITIONS = settings.get("max_active_positions", self.strategy_manager.MAX_ACTIVE_POSITIONS)
                 self.strategy_manager.COOLDOWN_PERIOD_SECONDS = settings.get("cooldown_period_seconds", self.strategy_manager.COOLDOWN_PERIOD_SECONDS)
-                self.strategy_manager.MARKET_OPEN_TIME = dt_time.fromisoformat(settings["market_open_time"]) if isinstance(settings["market_open_time"], str) else settings["market_open_time"]
-                self.strategy_manager.MARKET_CLOSE_TIME = dt_time.fromisoformat(settings["market_close_time"]) if isinstance(settings["market_close_time"], str) else settings["market_close_time"]
-                self.strategy_manager.AUTO_EXIT_TIME = dt_time.fromisoformat(settings["auto_exit_time"]) if isinstance(settings["auto_exit_time"], str) else settings["auto_exit_time"]
+                
+                # Handle time objects carefully as they might be stored as strings
+                market_open_time_str = settings.get("market_open_time")
+                if isinstance(market_open_time_str, str):
+                    self.strategy_manager.MARKET_OPEN_TIME = dt_time.fromisoformat(market_open_time_str)
+                else:
+                    self.strategy_manager.MARKET_OPEN_TIME = settings.get("market_open_time", self.strategy_manager.MARKET_OPEN_TIME)
+
+                market_close_time_str = settings.get("market_close_time")
+                if isinstance(market_close_time_str, str):
+                    self.strategy_manager.MARKET_CLOSE_TIME = dt_time.fromisoformat(market_close_time_str)
+                else:
+                    self.strategy_manager.MARKET_CLOSE_TIME = settings.get("market_close_time", self.strategy_manager.MARKET_CLOSE_TIME)
+
+                auto_exit_time_str = settings.get("auto_exit_time")
+                if isinstance(auto_exit_time_str, str):
+                    self.strategy_manager.AUTO_EXIT_TIME = dt_time.fromisoformat(auto_exit_time_str)
+                else:
+                    self.strategy_manager.AUTO_EXIT_TIME = settings.get("auto_exit_time", self.strategy_manager.AUTO_EXIT_TIME)
+
                 self.strategy_manager.DEFAULT_LEVERAGE_MULTIPLIER = settings.get("default_leverage_multiplier", self.strategy_manager.DEFAULT_LEVERAGE_MULTIPLIER)
                 
                 # Dashboard specific settings (passed to strategy manager for exit logic)
@@ -588,6 +607,19 @@ if __name__ == "__main__":
     redis_store_instance.set_setting("leverage_enabled", True)
     redis_store_instance.set_setting("ai_auto_leverage", True)
     redis_store_instance.set_setting("trade_mode", "paper") # Ensure it's in paper mode for testing
+    redis_store_instance.set_setting("min_ai_score_buy", 0.7)
+    redis_store_instance.set_setting("min_ai_score_sell", -0.7)
+    redis_store_instance.set_setting("sl_percent", 0.02)
+    redis_store_instance.set_setting("target_percent", 0.10)
+    redis_store_instance.set_setting("tsl_percent", 0.01)
+    redis_store_instance.set_setting("tsl_activation_buffer_percent", 0.01)
+    redis_store_instance.set_setting("cooldown_period_seconds", 300)
+    redis_store_instance.set_setting("max_active_positions", 10)
+    redis_store_instance.set_setting("default_leverage_multiplier", 5.0)
+    redis_store_instance.set_setting("market_open_time", "09:15:00")
+    redis_store_instance.set_setting("market_close_time", "15:30:00")
+    redis_store_instance.set_setting("auto_exit_time", "15:20:00")
+
 
     # Test entry
     print("\n--- Testing Trade Entry ---")
