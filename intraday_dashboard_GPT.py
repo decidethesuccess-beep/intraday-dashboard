@@ -15,7 +15,7 @@ import json
 # Import core components
 from redis_store import RedisStore
 from angelone_api_patch import AngelOneAPI
-from dhan_api_patch import DhanAPI
+# Removed: from dhan_api_patch import DhanAPI
 from llm_client import LLMClient
 from sentiment_analyzer import SentimentAnalyzer
 from strategy import StrategyManager
@@ -51,7 +51,7 @@ if not st.session_state.initialized:
     st.session_state.redis_store = RedisStore(st.session_state.angel_api)
     st.session_state.redis_store.connect()
 
-    st.session_state.dhan_api = DhanAPI() # Initialize DhanAPI
+    # Removed: st.session_state.dhan_api = DhanAPI() # Initialize DhanAPI
 
     st.session_state.llm_client = LLMClient() # Initialize LLMClient
     
@@ -63,13 +63,12 @@ if not st.session_state.initialized:
     # NEW: Pass ai_webhook to StrategyManager
     st.session_state.strategy_manager = StrategyManager(st.session_state.redis_store, st.session_state.ai_webhook)
 
-    # UPDATED: Pass ai_webhook to PaperTradeSystem
+    # UPDATED: PaperTradeSystem no longer receives dhan_api
     st.session_state.paper_trade_system = PaperTradeSystem(
         st.session_state.redis_store, 
         st.session_state.strategy_manager, 
-        st.session_state.dhan_api, 
         st.session_state.angel_api,
-        st.session_state.ai_webhook # NEW: Pass ai_webhook
+        st.session_state.ai_webhook # Pass ai_webhook
     )
 
     st.session_state.live_stream_manager = LiveStreamManager(st.session_state.angel_api, st.session_state.redis_store)
