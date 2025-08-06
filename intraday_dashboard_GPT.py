@@ -1,5 +1,5 @@
 # intraday_dashboard_GPT.py
-# This script creates a Streamlit dashboard for the DTS Intraday AI Strategy.
+# This script creates a Streamlit dashboard for the DTS Intraday AI Trading System.
 # It allows users to monitor live trades, view performance metrics, and control system settings.
 
 import streamlit as st
@@ -15,7 +15,7 @@ import json
 # Import core components
 from redis_store import RedisStore
 from angelone_api_patch import AngelOneAPI
-# Removed: from dhan_api_patch import DhanAPI
+# Removed: from dhan_api_patch import DhanAPI # This import should be removed as Dhan is no longer used
 from llm_client import LLMClient
 from sentiment_analyzer import SentimentAnalyzer
 from strategy import StrategyManager
@@ -51,7 +51,7 @@ if not st.session_state.initialized:
     st.session_state.redis_store = RedisStore(st.session_state.angel_api)
     st.session_state.redis_store.connect()
 
-    # Removed: st.session_state.dhan_api = DhanAPI() # Initialize DhanAPI
+    # Removed: st.session_state.dhan_api = DhanAPI() # Initialize DhanAPI (no longer needed)
 
     st.session_state.llm_client = LLMClient() # Initialize LLMClient
     
@@ -63,12 +63,12 @@ if not st.session_state.initialized:
     # NEW: Pass ai_webhook to StrategyManager
     st.session_state.strategy_manager = StrategyManager(st.session_state.redis_store, st.session_state.ai_webhook)
 
-    # UPDATED: PaperTradeSystem no longer receives dhan_api
+    # CORRECTED: PaperTradeSystem now receives angel_api and ai_webhook directly, no dhan_api
     st.session_state.paper_trade_system = PaperTradeSystem(
         st.session_state.redis_store, 
         st.session_state.strategy_manager, 
-        st.session_state.angel_api,
-        st.session_state.ai_webhook # Pass ai_webhook
+        st.session_state.angel_api, # Pass angel_api as the third argument
+        st.session_state.ai_webhook # Pass ai_webhook as the fourth argument
     )
 
     st.session_state.live_stream_manager = LiveStreamManager(st.session_state.angel_api, st.session_state.redis_store)
@@ -157,6 +157,7 @@ with tab1:
                     unrealized_pnl = (current_ltp - trade['entry_price']) * trade['qty']
                 elif trade['direction'] == 'SELL':
                     unrealized_pnl = (trade['entry_price'] - current_ltp) * trade['qty']
+                total_unrealized_pnl += unrealized_pnl # This line was missing for total_unrealized_pnl calculation
             display_trade['unrealized_pnl'] = round(unrealized_pnl, 2)
             active_trades_for_display.append(display_trade)
 
