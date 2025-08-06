@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 # Import necessary modules
 from redis_store import RedisStore
 from strategy import StrategyManager
-from dhan_api_patch import DhanAPI # For potential future Dhan order placement
+# Removed: from dhan_api_patch import DhanAPI # For potential future Dhan order placement
 from angelone_api_patch import AngelOneAPI # For fetching LTP fallback
 from ai_webhook import AIWebhook # NEW: Import AIWebhook for sending feedback
 
@@ -34,9 +34,8 @@ class PaperTradeSystem:
     def __init__(self,
                  redis_store: RedisStore,
                  strategy_manager: StrategyManager,
-                 dhan_api: Optional[DhanAPI], # Optional Dhan API for future live trading
                  angel_api: AngelOneAPI, # Angel One API for LTP fallback
-                 ai_webhook: AIWebhook # NEW: AIWebhook for sending feedback
+                 ai_webhook: AIWebhook # NEW: Import AIWebhook for sending feedback
                  ):
         """
         Initializes the PaperTradeSystem.
@@ -44,7 +43,6 @@ class PaperTradeSystem:
         Args:
             redis_store (RedisStore): An instance of RedisStore for data persistence.
             strategy_manager (StrategyManager): An instance of StrategyManager for trade logic.
-            dhan_api (Optional[DhanAPI]): An optional instance of DhanAPI for live order placement.
             angel_api (AngelOneAPI): An instance of AngelOneAPI for LTP fallback.
             ai_webhook (AIWebhook): An instance of AIWebhook for sending AI feedback. # NEW
         """
@@ -52,7 +50,7 @@ class PaperTradeSystem:
 
         self.redis_store = redis_store
         self.strategy_manager = strategy_manager
-        self.dhan_api = dhan_api # Store DhanAPI instance
+        # Removed: self.dhan_api = dhan_api # Store DhanAPI instance
         self.angel_api = angel_api # Store AngelOneAPI instance
         self.ai_webhook = ai_webhook # NEW: Store AIWebhook instance
 
@@ -82,23 +80,8 @@ class PaperTradeSystem:
             # Add more as needed, ensure tokens are correct
         }
 
-        # Define mapping for symbols to their Dhan Security IDs (for Dhan API calls)
-        # IMPORTANT: These are placeholders. You MUST replace these with the actual
-        # Security IDs, Exchange Segments, and Instrument Types from Dhan's instrument master
-        # or discovery APIs once you have access to them.
-        self.SYMBOL_DHAN_MAP = {
-            "INFY": {"securityId": "1594", "exchangeSegment": "NSE_EQ", "instrumentType": "EQUITY"}, # Example INFY ID
-            "TCS": {"securityId": "11536", "exchangeSegment": "NSE_EQ", "instrumentType": "EQUITY"}, # Example TCS ID
-            "RELIANCE": {"securityId": "2885", "exchangeSegment": "NSE_EQ", "instrumentType": "EQUITY"},
-            "SBIN": {"securityId": "3045", "exchangeSegment": "NSE_EQ", "instrumentType": "EQUITY"},
-            "HDFC_BANK": {"securityId": "3432", "exchangeSegment": "NSE_EQ", "instrumentType": "EQUITY"},
-            "ICICI_BANK": {"securityId": "4963", "exchangeSegment": "NSE_EQ", "instrumentType": "EQUITY"},
-            "ITC": {"securityId": "10606", "exchangeSegment": "NSE_EQ", "instrumentType": "EQUITY"},
-            "MARUTI": {"securityId": "20374", "exchangeType": "NSE_EQ", "instrumentType": "EQUITY"},
-            "AXISBANK": {"securityId": "1348", "exchangeType": "NSE_EQ", "instrumentType": "EQUITY"},
-            "NIFTY_50": {"securityId": "999260000", "exchangeSegment": "NSE_INDEX", "instrumentType": "INDEX"}, # Example NIFTY ID
-            # Add more symbols as needed
-        }
+        # Removed: Define mapping for symbols to their Dhan Security IDs (for Dhan API calls)
+        # Removed: self.SYMBOL_DHAN_MAP = { ... }
 
         logger.info("PaperTradeSystem initialized. Initial Capital: ₹%.2f", self.initial_capital)
 
@@ -332,31 +315,32 @@ class PaperTradeSystem:
         )
 
 
-        # --- Live Order Placement (Placeholder) ---
-        trade_mode = os.getenv("TRADE_MODE", "paper")
-        if trade_mode == "live" and self.dhan_api:
-            logger.info(f"Attempting LIVE order placement for {symbol} (Trade ID: {trade_id})...")
-            dhan_info = self.SYMBOL_DHAN_MAP.get(symbol)
-            if dhan_info:
-                order_payload = {
-                    "symbol": symbol,
-                    "securityId": dhan_info["securityId"],
-                    "exchangeSegment": dhan_info["exchangeSegment"],
-                    "transactionType": direction, # BUY/SELL
-                    "productType": "INTRADAY", # Or "CNC" for delivery
-                    "orderType": "MARKET", # Or "LIMIT"
-                    "quantity": quantity,
-                    # "price": ltp # For LIMIT orders
-                }
-                response = self.dhan_api.place_order_dry_run(order_payload) # Using dry_run for now
-                if response and response.get('status') == 'success':
-                    logger.info(f"LIVE Order for {symbol} placed successfully (Dry Run). Order ID: {response.get('simulatedOrderId')}")
-                else:
-                    logger.error(f"Failed to place LIVE order for {symbol}: {response}")
-            else:
-                logger.error(f"No Dhan mapping for symbol {symbol}. Cannot place live order.")
-        elif trade_mode == "live" and not self.dhan_api:
-            logger.warning("Live trading mode enabled, but DhanAPI client is not initialized. Cannot place live orders.")
+        # --- Live Order Placement (Placeholder - Dhan removed) ---
+        # Removed Dhan specific order placement logic
+        # trade_mode = os.getenv("TRADE_MODE", "paper")
+        # if trade_mode == "live" and self.dhan_api:
+        #     logger.info(f"Attempting LIVE order placement for {symbol} (Trade ID: {trade_id})...")
+        #     dhan_info = self.SYMBOL_DHAN_MAP.get(symbol)
+        #     if dhan_info:
+        #         order_payload = {
+        #             "symbol": symbol,
+        #             "securityId": dhan_info["securityId"],
+        #             "exchangeSegment": dhan_info["exchangeSegment"],
+        #             "transactionType": direction, # BUY/SELL
+        #             "productType": "INTRADAY", # Or "CNC" for delivery
+        #             "orderType": "MARKET", # Or "LIMIT"
+        #             "quantity": quantity,
+        #             # "price": ltp # For LIMIT orders
+        #         }
+        #         response = self.dhan_api.place_order_dry_run(order_payload) # Using dry_run for now
+        #         if response and response.get('status') == 'success':
+        #             logger.info(f"LIVE Order for {symbol} placed successfully (Dry Run). Order ID: {response.get('simulatedOrderId')}")
+        #         else:
+        #             logger.error(f"Failed to place LIVE order for {symbol}: {response}")
+        #     else:
+        #         logger.error(f"No Dhan mapping for symbol {symbol}. Cannot place live order.")
+        # elif trade_mode == "live" and not self.dhan_api:
+        #     logger.warning("Live trading mode enabled, but DhanAPI client is not initialized. Cannot place live orders.")
         # --- End Live Order Placement Placeholder ---
 
 
@@ -458,7 +442,7 @@ class PaperTradeSystem:
 
                 current_ltp = self.redis_store.read_ltp(trade['symbol'])
                 if current_ltp is None:
-                    logger.warning(f"Could not get current LTP for {trade['symbol']}. Skipping exit check for this trade.")
+                    logger.warning(f"Could not get LTP for active trade {trade['symbol']} for unrealized PnL calculation.")
                     continue
 
                 # Update TSL if enabled
@@ -575,7 +559,7 @@ if __name__ == "__main__":
         angel_api_instance.logout()
         exit()
 
-    dhan_api_instance = DhanAPI() # Initialize DhanAPI for testing
+    # Removed: dhan_api_instance = DhanAPI() # Initialize DhanAPI for testing
 
     llm_client_instance = LLMClient() # Initialize LLMClient
     ai_webhook_instance = AIWebhook(llm_client_instance) # Initialize AIWebhook
@@ -585,7 +569,6 @@ if __name__ == "__main__":
     paper_trade_system = PaperTradeSystem(
         redis_store_instance,
         strategy_manager_instance,
-        dhan_api_instance, # Pass DhanAPI instance
         angel_api_instance, # Pass AngelOneAPI instance
         ai_webhook_instance # NEW: Pass AIWebhook instance
     )
