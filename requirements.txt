@@ -5,5 +5,5 @@ python-dotenv
 redis
 pyotp
 pycryptodome
-SmartApi
 websocket-client
+git+https://github.com/angel-one/SmartAPI.git
