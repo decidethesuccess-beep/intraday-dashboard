@@ -47,8 +47,8 @@ class Backtester:
 
         # Initialize StrategyManager and PaperTradeSystem (re-using core logic)
         self.strategy_manager = StrategyManager(redis_store, self.ai_webhook) # Pass ai_webhook
-        # Pass ai_webhook to PaperTradeSystem as well
-        self.paper_trade_system = PaperTradeSystem(redis_store, self.strategy_manager, None, angel_api, self.ai_webhook) # NEW: Pass ai_webhook
+        # PaperTradeSystem no longer receives dhan_api
+        self.paper_trade_system = PaperTradeSystem(redis_store, self.strategy_manager, angel_api, self.ai_webhook) # Pass ai_webhook
 
 
         self.historical_data: Dict[str, pd.DataFrame] = {} # {symbol: DataFrame of historical data}
@@ -191,7 +191,7 @@ class Backtester:
                     if not trade:
                         continue
 
-                    # Update TSL if enabled for this trade
+                    # Update TSL if enabled
                     if trade['tsl_enabled']: # Use trade-specific TSL setting
                         updated_tsl = self.strategy_manager.update_trailing_sl(
                             trade,
@@ -238,7 +238,7 @@ class Backtester:
                                 ltp,
                                 mock_ai_score,
                                 mock_sentiment,
-                                tsl_enabled=leverage_enabled, # Pass backtest-specific settings
+                                tsl_enabled=leverage_enabled,
                                 ai_tsl_enabled=ai_auto_leverage,
                                 leverage_enabled=leverage_enabled,
                                 ai_auto_leverage=ai_auto_leverage
