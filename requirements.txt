@@ -4,3 +4,4 @@ plotly
 python-dotenv
 redis
 pyotp
+SmartApi
