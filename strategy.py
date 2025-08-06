@@ -41,8 +41,8 @@ class StrategyManager:
         self.ai_webhook = ai_webhook # NEW: Store AIWebhook instance
 
         # Strategy Parameters from .env
-        self.MIN_AI_SCORE_BUY = 0.3 # Temporarily lower for testing
-        self.MIN_AI_SCORE_SELL = -0.3 # Temporarily lower for testing
+        self.MIN_AI_SCORE_BUY = float(os.getenv("MIN_AI_SCORE_BUY", 0.7)) # Minimum AI score for BUY entry
+        self.MIN_AI_SCORE_SELL = float(os.getenv("MIN_AI_SCORE_SELL", -0.7)) # Minimum AI score for SELL entry
         self.SL_PERCENT = float(os.getenv("SL_PERCENT", 2)) / 100 # Stop Loss % (e.g., 2% -> 0.02)
         self.TARGET_PERCENT = float(os.getenv("TARGET_PERCENT", 10)) / 100 # Target % (e.g., 10% -> 0.10)
         self.TSL_PERCENT = float(os.getenv("TSL_PERCENT", 1)) / 100 # Trailing Stop Loss % (e.g., 1% -> 0.01)
@@ -119,6 +119,33 @@ class StrategyManager:
             return sentiment_str.decode('utf-8').lower() # Decode bytes and convert to lowercase
         return None
 
+    def get_leverage_tier(self, capital: float, settings: Dict[str, Any]) -> float:
+        """
+        Determines the leverage tier based on current capital and system settings.
+        For now, it returns the default leverage multiplier.
+        This can be extended to implement dynamic tiers based on capital.
+
+        Args:
+            capital (float): The current available capital.
+            settings (Dict[str, Any]): Dictionary of current system settings from Redis.
+
+        Returns:
+            float: The determined leverage multiplier.
+        """
+        # In the future, you could implement more complex logic here
+        # based on capital ranges or other settings.
+        # Example:
+        # if settings.get("ai_auto_leverage_enabled", False):
+        #     # Logic for AI-driven leverage tier based on capital or other factors
+        #     if capital > 500000: return 5.0
+        #     elif capital > 100000: return 3.0
+        #     else: return 1.0
+        # else:
+        #     return settings.get("default_leverage_multiplier", self.DEFAULT_LEVERAGE_MULTIPLIER)
+
+        # For now, simply return the default multiplier from strategy settings
+        # or the class attribute if not found in settings.
+        return settings.get("default_leverage_multiplier", self.DEFAULT_LEVERAGE_MULTIPLIER)
 
     def get_capital_allocation_pct(self, current_capital: float) -> float:
         """
@@ -427,6 +454,28 @@ if __name__ == "__main__":
         def set_cooldown_timer(self, symbol: str, duration_seconds: int):
             cooldown_key = f"cooldown:{symbol}"
             self.redis_client().setex(cooldown_key, duration_seconds, "active")
+        
+        def load_settings_from_redis(self) -> Dict[str, Any]: # Mock this method
+            return {
+                "min_ai_score_buy": 0.7,
+                "min_ai_score_sell": -0.7,
+                "sl_percent": 0.02,
+                "target_percent": 0.10,
+                "tsl_percent": 0.01,
+                "tsl_activation_buffer_percent": 0.01,
+                "cooldown_period_seconds": 300,
+                "max_active_positions": 10,
+                "market_open_time": "09:15",
+                "market_close_time": "15:30",
+                "auto_exit_time": "15:20",
+                "default_leverage_multiplier": 5.0,
+                "tsl_enabled": True,
+                "ai_tsl_enabled": True,
+                "leverage_enabled": True,
+                "ai_auto_leverage": True,
+                "is_sync_paused": False
+            }
+
 
     # Mock AIWebhook for testing purposes
     class MockAIWebhookForStrategy:
@@ -446,6 +495,11 @@ if __name__ == "__main__":
     print(f"Capital 40000: Allocation % = {strategy_manager.get_capital_allocation_pct(40000) * 100:.2f}%") # Should be SMALL
     print(f"Capital 100000: Allocation % = {strategy_manager.get_capital_allocation_pct(100000) * 100:.2f}%") # Should be MID
     print(f"Capital 600000: Allocation % = {strategy_manager.get_capital_allocation_pct(600000) * 100:.2f}%") # Should be LARGE
+
+    # --- Test Leverage Tier (NEW) ---
+    print("\n--- Testing Leverage Tier ---")
+    mock_settings = mock_redis_store.load_settings_from_redis()
+    print(f"Leverage Tier for 100000 capital: {strategy_manager.get_leverage_tier(100000.0, mock_settings)}x") # Should be 5.0x
 
 
     # --- Test Entry Conditions ---
