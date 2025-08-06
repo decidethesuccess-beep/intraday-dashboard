@@ -1,0 +1,12 @@
+[
+    {"exchangeType": 1, "tokens": ["99926000"], "symbol": "NIFTY_50"},
+    {"exchangeType": 1, "tokens": ["2885"], "symbol": "RELIANCE"},
+    {"exchangeType": 1, "tokens": ["3045"], "symbol": "TCS"},
+    {"exchangeType": 1, "tokens": ["3432"], "symbol": "HDFC_BANK"},
+    {"exchangeType": 1, "tokens": ["1333"], "symbol": "SBIN"},
+    {"exchangeType": 1, "tokens": ["4963"], "symbol": "ICICI_BANK"},
+    {"exchangeType": 1, "tokens": ["10604"], "symbol": "INFY"},
+    {"exchangeType": 1, "tokens": ["10606"], "symbol": "ITC"},
+    {"exchangeType": 1, "tokens": ["20374"], "symbol": "MARUTI"},
+    {"exchangeType": 1, "tokens": ["1348"], "symbol": "AXISBANK"}
+]
